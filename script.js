@@ -17,6 +17,8 @@ const permissionStatus = document.getElementById('permissionStatus');
 const notificationForm = document.getElementById('notificationForm');
 const savedNotifications = document.getElementById('savedNotifications');
 const testNotificationBtn = document.getElementById('testNotification');
+const currentReminders = document.getElementById('currentReminders');
+const refreshRemindersBtn = document.getElementById('refreshReminders');
 
 // Bildirim izni kontrolü
 function checkNotificationPermission() {
@@ -25,10 +27,19 @@ function checkNotificationPermission() {
     const isSafari = /Safari/.test(navigator.userAgent) && !/Chrome/.test(navigator.userAgent);
     
     if (isIOS && isSafari) {
-        // iPhone Safari için özel mesaj
-        permissionStatus.innerHTML = '<div class="status info">📱 iPhone Safari: Ayarlar > Safari > Web Sitesi Ayarları > Bildirimler\'den izin verin</div>';
-        requestPermissionBtn.style.display = 'block';
-        requestPermissionBtn.textContent = 'iPhone Safari Ayarları';
+        // iPhone Safari için alternatif yaklaşım
+        permissionStatus.innerHTML = `
+            <div class="status info">
+                📱 iPhone Safari Bildirim Sistemi<br><br>
+                <strong>iPhone Safari'de bildirimler sınırlıdır.</strong><br>
+                Bu uygulama zamanlanmış hatırlatmalar için tasarlanmıştır.<br><br>
+                <strong>Kullanım:</strong><br>
+                1. Ana ekrana ekleyin<br>
+                2. Belirlenen saatlerde uygulamayı açın<br>
+                3. Hatırlatmalarınızı görün
+            </div>
+        `;
+        requestPermissionBtn.style.display = 'none';
         return;
     }
     
@@ -46,7 +57,13 @@ function checkNotificationPermission() {
             requestPermissionBtn.textContent = 'Bildirim İzni Ver';
         }
     } else {
-        permissionStatus.innerHTML = '<div class="status error">❌ Bu tarayıcı bildirimleri desteklemiyor</div>';
+        permissionStatus.innerHTML = `
+            <div class="status info">
+                ℹ️ Bu tarayıcı push bildirimleri desteklemiyor<br><br>
+                <strong>Alternatif:</strong><br>
+                Ana ekrana ekleyerek zamanlanmış hatırlatmalar kullanabilirsiniz.
+            </div>
+        `;
         requestPermissionBtn.style.display = 'none';
     }
 }
@@ -185,13 +202,58 @@ function checkScheduledNotifications() {
     });
 }
 
+// Hatırlatmaları güncelle
+function updateCurrentReminders() {
+    const notifications = loadNotifications();
+    const now = new Date();
+    const currentTime = now.getHours().toString().padStart(2, '0') + ':' + now.getMinutes().toString().padStart(2, '0');
+    const currentDay = now.getDay();
+    
+    // Bugün için aktif hatırlatmaları bul
+    const todayReminders = notifications.filter(notification => {
+        return notification.days.includes(currentDay) && notification.time === currentTime;
+    });
+    
+    if (todayReminders.length === 0) {
+        currentReminders.innerHTML = '<p class="no-reminders">Şu anda aktif hatırlatma yok</p>';
+        return;
+    }
+    
+    const dayNames = ['Pazartesi', 'Salı', 'Çarşamba', 'Perşembe', 'Cuma', 'Cumartesi', 'Pazar'];
+    
+    currentReminders.innerHTML = todayReminders.map(notification => {
+        const selectedDays = notification.days.map(day => dayNames[day]).join(', ');
+        
+        return `
+            <div class="reminder-item">
+                <div class="reminder-info">
+                    <div class="reminder-text">🔔 ${notification.text}</div>
+                    <div class="reminder-time">🕐 ${notification.time}</div>
+                    <div class="reminder-days">📅 ${selectedDays}</div>
+                </div>
+                <div class="reminder-status">AKTİF</div>
+            </div>
+        `;
+    }).join('');
+}
+
+// Hatırlatmaları yenile butonu
+refreshRemindersBtn.addEventListener('click', () => {
+    updateCurrentReminders();
+    alert('Hatırlatmalar güncellendi!');
+});
+
 // Her dakika kontrol et
 setInterval(checkScheduledNotifications, 60000);
+
+// Hatırlatmaları da güncelle
+setInterval(updateCurrentReminders, 60000);
 
 // Sayfa yüklendiğinde çalıştır
 document.addEventListener('DOMContentLoaded', () => {
     checkNotificationPermission();
     displayNotifications();
+    updateCurrentReminders();
     
     // PWA kurulumu için özel mesaj
     let deferredPrompt;

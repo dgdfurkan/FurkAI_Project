@@ -239,11 +239,64 @@ main {
     background: #c82333;
 }
 
-.no-notifications {
+.no-notifications, .no-reminders {
     text-align: center;
     color: #666;
     font-style: italic;
     padding: 20px;
+}
+
+.reminders-list {
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.reminder-item {
+    background: linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%);
+    border: 1px solid #ffb347;
+    border-radius: 8px;
+    padding: 15px;
+    margin-bottom: 10px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 10px rgba(255, 179, 71, 0.2);
+}
+
+.reminder-item:hover {
+    transform: translateX(5px);
+    box-shadow: 0 4px 15px rgba(255, 179, 71, 0.3);
+}
+
+.reminder-info {
+    flex: 1;
+}
+
+.reminder-text {
+    font-weight: 600;
+    color: #8b4513;
+    margin-bottom: 5px;
+}
+
+.reminder-time {
+    color: #a0522d;
+    font-size: 0.9rem;
+}
+
+.reminder-days {
+    color: #cd853f;
+    font-size: 0.8rem;
+    margin-top: 5px;
+}
+
+.reminder-status {
+    background: #ff6b6b;
+    color: white;
+    padding: 4px 8px;
+    border-radius: 12px;
+    font-size: 0.7rem;
+    font-weight: 600;
 }
 
 footer {
