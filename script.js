@@ -17,6 +17,7 @@ const permissionStatus = document.getElementById('permissionStatus');
 const notificationForm = document.getElementById('notificationForm');
 const savedNotifications = document.getElementById('savedNotifications');
 const testNotificationBtn = document.getElementById('testNotification');
+const debugTimeBtn = document.getElementById('debugTime');
 const currentReminders = document.getElementById('currentReminders');
 const refreshRemindersBtn = document.getElementById('refreshReminders');
 
@@ -159,6 +160,21 @@ testNotificationBtn.addEventListener('click', () => {
     }
 });
 
+// Debug saat kontrolü
+debugTimeBtn.addEventListener('click', () => {
+    const now = new Date();
+    const turkeyTime = new Date(now.toLocaleString("en-US", {timeZone: "Europe/Istanbul"}));
+    const currentTime = turkeyTime.getHours().toString().padStart(2, '0') + ':' + turkeyTime.getMinutes().toString().padStart(2, '0');
+    const currentDay = turkeyTime.getDay();
+    
+    const dayNames = ['Pazar', 'Pazartesi', 'Salı', 'Çarşamba', 'Perşembe', 'Cuma', 'Cumartesi'];
+    
+    alert(`🕐 Saat Kontrolü:\n\nTürkiye Saati: ${currentTime}\nGün: ${dayNames[currentDay]}\n\nBildirimleriniz bu saatte çalışacak.`);
+    
+    // Bildirim kontrolünü manuel çalıştır
+    checkScheduledNotifications();
+});
+
 // Bildirim formu işleme
 notificationForm.addEventListener('submit', (e) => {
     e.preventDefault();
@@ -242,9 +258,19 @@ function deleteNotification(id) {
 // Zamanlanmış bildirimleri kontrol etme
 function checkScheduledNotifications() {
     const notifications = loadNotifications();
+    
+    // Türkiye saati için düzeltme
     const now = new Date();
-    const currentTime = now.getHours().toString().padStart(2, '0') + ':' + now.getMinutes().toString().padStart(2, '0');
-    const currentDay = now.getDay();
+    const turkeyTime = new Date(now.toLocaleString("en-US", {timeZone: "Europe/Istanbul"}));
+    const currentTime = turkeyTime.getHours().toString().padStart(2, '0') + ':' + turkeyTime.getMinutes().toString().padStart(2, '0');
+    const currentDay = turkeyTime.getDay();
+    
+    // Debug bilgisi
+    console.log('Bildirim kontrolü:', {
+        currentTime: currentTime,
+        currentDay: currentDay,
+        notifications: notifications.length
+    });
     
     notifications.forEach(notification => {
         if (notification.time === currentTime && notification.days.includes(currentDay)) {
@@ -313,8 +339,8 @@ function checkScheduledNotifications() {
 
 // Hatırlatma fonksiyonları kaldırıldı - artık gerçek push bildirimler kullanılıyor
 
-// Her dakika kontrol et - gerçek push bildirimler için
-setInterval(checkScheduledNotifications, 60000);
+// Her 30 saniyede kontrol et - gerçek push bildirimler için
+setInterval(checkScheduledNotifications, 30000);
 
 // Sayfa yüklendiğinde çalıştır
 document.addEventListener('DOMContentLoaded', () => {
