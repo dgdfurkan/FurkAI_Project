@@ -248,111 +248,78 @@ function checkScheduledNotifications() {
     
     notifications.forEach(notification => {
         if (notification.time === currentTime && notification.days.includes(currentDay)) {
-            // Gerçek push bildirimi gönder
-            if (Notification.permission === 'granted') {
-                // WhatsApp gibi gerçek bildirim
-                const notificationOptions = {
-                    body: notification.text,
-                    icon: '/FurkAI_Project/icon-192.png',
-                    badge: '/FurkAI_Project/icon-192.png',
-                    vibrate: [200, 100, 200, 100, 200], // WhatsApp gibi titreşim
-                    requireInteraction: true, // Otomatik kapanmasın
-                    silent: false, // Ses çıkar
-                    tag: `scheduled-${notification.id}`, // Benzersiz tag
-                    data: {
-                        notificationId: notification.id,
-                        type: 'scheduled',
-                        timestamp: Date.now()
-                    },
-                    actions: [
-                        {
-                            action: 'view',
-                            title: 'Görüntüle',
-                            icon: '/FurkAI_Project/icon-192.png'
+            // Daha önce bu bildirim gönderilmiş mi kontrol et
+            const lastSentKey = `lastSent_${notification.id}_${currentDay}_${currentTime}`;
+            const lastSent = localStorage.getItem(lastSentKey);
+            const now = Date.now();
+            
+            // Eğer bu bildirim bugün bu saatte daha önce gönderilmemişse
+            if (!lastSent || (now - parseInt(lastSent)) > 60000) { // 1 dakika tolerans
+                // Gerçek push bildirimi gönder
+                if (Notification.permission === 'granted') {
+                    // WhatsApp gibi gerçek bildirim
+                    const notificationOptions = {
+                        body: notification.text,
+                        icon: '/FurkAI_Project/icon-192.png',
+                        badge: '/FurkAI_Project/icon-192.png',
+                        vibrate: [200, 100, 200, 100, 200], // WhatsApp gibi titreşim
+                        requireInteraction: true, // Otomatik kapanmasın
+                        silent: false, // Ses çıkar
+                        tag: `scheduled-${notification.id}-${currentDay}`, // Benzersiz tag
+                        data: {
+                            notificationId: notification.id,
+                            type: 'scheduled',
+                            timestamp: now
                         },
-                        {
-                            action: 'dismiss',
-                            title: 'Kapat',
-                            icon: '/FurkAI_Project/icon-192.png'
-                        }
-                    ]
-                };
+                        actions: [
+                            {
+                                action: 'view',
+                                title: 'Görüntüle',
+                                icon: '/FurkAI_Project/icon-192.png'
+                            },
+                            {
+                                action: 'dismiss',
+                                title: 'Kapat',
+                                icon: '/FurkAI_Project/icon-192.png'
+                            }
+                        ]
+                    };
 
-                // Gerçek push bildirimi oluştur
-                const pushNotification = new Notification('🔔 Zamanlanmış Bildirim', notificationOptions);
-                
-                // Bildirim tıklama olayı
-                pushNotification.onclick = function() {
-                    window.focus();
-                    pushNotification.close();
-                };
+                    // Gerçek push bildirimi oluştur
+                    const pushNotification = new Notification('🔔 Zamanlanmış Bildirim', notificationOptions);
+                    
+                    // Bildirim tıklama olayı
+                    pushNotification.onclick = function() {
+                        window.focus();
+                        pushNotification.close();
+                    };
 
-                // Bildirim hatası kontrolü
-                pushNotification.onerror = function(error) {
-                    console.error('Bildirim hatası:', error);
-                };
+                    // Bildirim hatası kontrolü
+                    pushNotification.onerror = function(error) {
+                        console.error('Bildirim hatası:', error);
+                    };
 
-                // Bildirim gösterildiğinde log
-                pushNotification.onshow = function() {
-                    console.log('Zamanlanmış bildirim gösterildi:', notification.text);
-                };
+                    // Bildirim gösterildiğinde log ve kaydet
+                    pushNotification.onshow = function() {
+                        console.log('Zamanlanmış bildirim gösterildi:', notification.text);
+                        // Bu bildirimin gönderildiğini kaydet
+                        localStorage.setItem(lastSentKey, now.toString());
+                    };
+                }
             }
         }
     });
 }
 
-// Hatırlatmaları güncelle
-function updateCurrentReminders() {
-    const notifications = loadNotifications();
-    const now = new Date();
-    const currentTime = now.getHours().toString().padStart(2, '0') + ':' + now.getMinutes().toString().padStart(2, '0');
-    const currentDay = now.getDay();
-    
-    // Bugün için aktif hatırlatmaları bul
-    const todayReminders = notifications.filter(notification => {
-        return notification.days.includes(currentDay) && notification.time === currentTime;
-    });
-    
-    if (todayReminders.length === 0) {
-        currentReminders.innerHTML = '<p class="no-reminders">Şu anda aktif hatırlatma yok</p>';
-        return;
-    }
-    
-    const dayNames = ['Pazartesi', 'Salı', 'Çarşamba', 'Perşembe', 'Cuma', 'Cumartesi', 'Pazar'];
-    
-    currentReminders.innerHTML = todayReminders.map(notification => {
-        const selectedDays = notification.days.map(day => dayNames[day]).join(', ');
-        
-        return `
-            <div class="reminder-item">
-                <div class="reminder-info">
-                    <div class="reminder-text">🔔 ${notification.text}</div>
-                    <div class="reminder-time">🕐 ${notification.time}</div>
-                    <div class="reminder-days">📅 ${selectedDays}</div>
-                </div>
-                <div class="reminder-status">AKTİF</div>
-            </div>
-        `;
-    }).join('');
-}
+// Hatırlatma fonksiyonları kaldırıldı - artık gerçek push bildirimler kullanılıyor
 
-// Hatırlatmaları yenile butonu
-refreshRemindersBtn.addEventListener('click', () => {
-    updateCurrentReminders();
-    alert('Hatırlatmalar güncellendi!');
-});
-
-// Her dakika kontrol et
+// Her dakika kontrol et - gerçek push bildirimler için
 setInterval(checkScheduledNotifications, 60000);
-
-// Hatırlatmaları da güncelle
-setInterval(updateCurrentReminders, 60000);
 
 // Sayfa yüklendiğinde çalıştır
 document.addEventListener('DOMContentLoaded', () => {
     checkNotificationPermission();
     displayNotifications();
-    updateCurrentReminders();
     
     // PWA kurulumu için özel mesaj
     let deferredPrompt;
