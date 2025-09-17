@@ -1,7 +1,7 @@
 // Service Worker kaydı
 if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
-        navigator.serviceWorker.register('/sw.js')
+        navigator.serviceWorker.register('/FurkAI_Project/sw.js')
             .then((registration) => {
                 console.log('SW registered: ', registration);
             })
@@ -20,17 +20,30 @@ const testNotificationBtn = document.getElementById('testNotification');
 
 // Bildirim izni kontrolü
 function checkNotificationPermission() {
+    // iPhone Safari için özel kontrol
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+    const isSafari = /Safari/.test(navigator.userAgent) && !/Chrome/.test(navigator.userAgent);
+    
+    if (isIOS && isSafari) {
+        // iPhone Safari için özel mesaj
+        permissionStatus.innerHTML = '<div class="status info">📱 iPhone Safari: Ayarlar > Safari > Web Sitesi Ayarları > Bildirimler\'den izin verin</div>';
+        requestPermissionBtn.style.display = 'block';
+        requestPermissionBtn.textContent = 'iPhone Safari Ayarları';
+        return;
+    }
+    
     if ('Notification' in window) {
         const permission = Notification.permission;
         if (permission === 'granted') {
             permissionStatus.innerHTML = '<div class="status success">✅ Bildirim izni verildi</div>';
             requestPermissionBtn.style.display = 'none';
         } else if (permission === 'denied') {
-            permissionStatus.innerHTML = '<div class="status error">❌ Bildirim izni reddedildi</div>';
+            permissionStatus.innerHTML = '<div class="status error">❌ Bildirim izni reddedildi. Tarayıcı ayarlarından izin verin.</div>';
             requestPermissionBtn.style.display = 'none';
         } else {
             permissionStatus.innerHTML = '<div class="status info">ℹ️ Bildirim izni gerekli</div>';
             requestPermissionBtn.style.display = 'block';
+            requestPermissionBtn.textContent = 'Bildirim İzni Ver';
         }
     } else {
         permissionStatus.innerHTML = '<div class="status error">❌ Bu tarayıcı bildirimleri desteklemiyor</div>';
@@ -40,6 +53,15 @@ function checkNotificationPermission() {
 
 // Bildirim izni isteme
 requestPermissionBtn.addEventListener('click', async () => {
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+    const isSafari = /Safari/.test(navigator.userAgent) && !/Chrome/.test(navigator.userAgent);
+    
+    if (isIOS && isSafari) {
+        // iPhone Safari için özel talimat
+        alert('iPhone Safari\'de bildirim izni için:\n\n1. iPhone Ayarlar > Safari > Web Sitesi Ayarları\n2. Bildirimler bölümüne gidin\n3. Bu site için "İzin Ver" seçin\n4. Sayfayı yenileyin');
+        return;
+    }
+    
     if ('Notification' in window) {
         const permission = await Notification.requestPermission();
         checkNotificationPermission();
@@ -51,8 +73,8 @@ testNotificationBtn.addEventListener('click', () => {
     if (Notification.permission === 'granted') {
         new Notification('Test Bildirimi', {
             body: 'Bu bir test bildirimidir!',
-            icon: '/icon-192.png',
-            badge: '/icon-192.png',
+            icon: '/FurkAI_Project/icon-192.png',
+            badge: '/FurkAI_Project/icon-192.png',
             vibrate: [100, 50, 100]
         });
     } else {
@@ -151,13 +173,13 @@ function checkScheduledNotifications() {
         if (notification.time === currentTime && notification.days.includes(currentDay)) {
             // Bildirimi gönder
             if (Notification.permission === 'granted') {
-                new Notification('Zamanlanmış Bildirim', {
-                    body: notification.text,
-                    icon: '/icon-192.png',
-                    badge: '/icon-192.png',
-                    vibrate: [100, 50, 100],
-                    tag: `notification-${notification.id}`
-                });
+            new Notification('Zamanlanmış Bildirim', {
+                body: notification.text,
+                icon: '/FurkAI_Project/icon-192.png',
+                badge: '/FurkAI_Project/icon-192.png',
+                vibrate: [100, 50, 100],
+                tag: `notification-${notification.id}`
+            });
             }
         }
     });

@@ -2,7 +2,7 @@
   "name": "Bildirim Sistemi",
   "short_name": "Bildirimler",
   "description": "Kişisel bildirim sistemi",
-  "start_url": "/",
+  "start_url": "/FurkAI_Project/",
   "display": "standalone",
   "background_color": "#ffffff",
   "theme_color": "#000000",

@@ -1,10 +1,10 @@
 const CACHE_NAME = 'bildirim-sistemi-v1';
 const urlsToCache = [
-  '/',
-  '/index.html',
-  '/style.css',
-  '/script.js',
-  '/manifest.json'
+  '/FurkAI_Project/',
+  '/FurkAI_Project/index.html',
+  '/FurkAI_Project/style.css',
+  '/FurkAI_Project/script.js',
+  '/FurkAI_Project/manifest.json'
 ];
 
 // Service Worker kurulumu
@@ -50,8 +50,8 @@ self.addEventListener('fetch', function(event) {
 self.addEventListener('push', function(event) {
   const options = {
     body: event.data ? event.data.text() : 'Yeni bildirim!',
-    icon: '/icon-192.png',
-    badge: '/icon-192.png',
+    icon: '/FurkAI_Project/icon-192.png',
+    badge: '/FurkAI_Project/icon-192.png',
     vibrate: [100, 50, 100],
     data: {
       dateOfArrival: Date.now(),
@@ -61,12 +61,12 @@ self.addEventListener('push', function(event) {
       {
         action: 'explore',
         title: 'Görüntüle',
-        icon: '/icon-192.png'
+        icon: '/FurkAI_Project/icon-192.png'
       },
       {
         action: 'close',
         title: 'Kapat',
-        icon: '/icon-192.png'
+        icon: '/FurkAI_Project/icon-192.png'
       }
     ]
   };
@@ -82,7 +82,7 @@ self.addEventListener('notificationclick', function(event) {
 
   if (event.action === 'explore') {
     event.waitUntil(
-      clients.openWindow('/')
+      clients.openWindow('/FurkAI_Project/')
     );
   }
 });
