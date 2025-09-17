@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bildirim Sistemi</title>
+    <link rel="manifest" href="manifest.json">
+    <link rel="stylesheet" href="style.css">
+    <meta name="theme-color" content="#000000">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="Bildirimler">
+    <link rel="apple-touch-icon" href="icon-192.png">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🔔 Bildirim Sistemi</h1>
+            <p>Kişisel bildirimlerinizi yönetin</p>
+        </header>
+
+        <main>
+            <div class="notification-section">
+                <h2>Bildirim İzinleri</h2>
+                <button id="requestPermission" class="btn btn-primary">
+                    Bildirim İzni Ver
+                </button>
+                <div id="permissionStatus" class="status"></div>
+            </div>
+
+            <div class="notification-section">
+                <h2>Yeni Bildirim Ekle</h2>
+                <form id="notificationForm">
+                    <div class="form-group">
+                        <label for="notificationText">Bildirim Metni:</label>
+                        <input type="text" id="notificationText" placeholder="Bildirim metnini girin" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="notificationTime">Bildirim Saati:</label>
+                        <input type="time" id="notificationTime" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="notificationDays">Günler:</label>
+                        <div class="checkbox-group">
+                            <label><input type="checkbox" value="0"> Pazartesi</label>
+                            <label><input type="checkbox" value="1"> Salı</label>
+                            <label><input type="checkbox" value="2"> Çarşamba</label>
+                            <label><input type="checkbox" value="3"> Perşembe</label>
+                            <label><input type="checkbox" value="4"> Cuma</label>
+                            <label><input type="checkbox" value="5"> Cumartesi</label>
+                            <label><input type="checkbox" value="6"> Pazar</label>
+                        </div>
+                    </div>
+                    
+                    <button type="submit" class="btn btn-success">Bildirimi Kaydet</button>
+                </form>
+            </div>
+
+            <div class="notification-section">
+                <h2>Kayıtlı Bildirimler</h2>
+                <div id="savedNotifications" class="notifications-list">
+                    <p class="no-notifications">Henüz kayıtlı bildirim yok</p>
+                </div>
+            </div>
+
+            <div class="notification-section">
+                <h2>Test Bildirimi</h2>
+                <button id="testNotification" class="btn btn-warning">
+                    Test Bildirimi Gönder
+                </button>
+            </div>
+        </main>
+
+        <footer>
+            <p>Bu uygulamayı ana ekranınıza ekleyebilirsiniz</p>
+        </footer>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
