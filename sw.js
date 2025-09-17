@@ -48,15 +48,32 @@ self.addEventListener('fetch', function(event) {
 
 // Push bildirimleri
 self.addEventListener('push', function(event) {
-  const options = {
-    body: event.data ? event.data.text() : 'Yeni bildirim!',
+  let notificationData = {
+    title: 'Bildirim Sistemi',
+    body: 'Yeni bildirim!',
     icon: '/FurkAI_Project/icon-192.png',
     badge: '/FurkAI_Project/icon-192.png',
     vibrate: [100, 50, 100],
     data: {
       dateOfArrival: Date.now(),
       primaryKey: 1
-    },
+    }
+  };
+
+  // Eğer veri gönderilmişse kullan
+  if (event.data) {
+    try {
+      const data = event.data.json();
+      notificationData.title = data.title || 'Bildirim Sistemi';
+      notificationData.body = data.body || 'Yeni bildirim!';
+      notificationData.data = { ...notificationData.data, ...data };
+    } catch (e) {
+      notificationData.body = event.data.text();
+    }
+  }
+
+  const options = {
+    ...notificationData,
     actions: [
       {
         action: 'explore',
@@ -68,11 +85,14 @@ self.addEventListener('push', function(event) {
         title: 'Kapat',
         icon: '/FurkAI_Project/icon-192.png'
       }
-    ]
+    ],
+    requireInteraction: true, // Bildirimi otomatik kapatma
+    silent: false, // Ses çıkar
+    tag: 'bildirim-sistemi' // Aynı tag'li bildirimleri değiştir
   };
 
   event.waitUntil(
-    self.registration.showNotification('Bildirim Sistemi', options)
+    self.registration.showNotification(notificationData.title, options)
   );
 });
 

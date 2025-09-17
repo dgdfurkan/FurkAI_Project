@@ -27,43 +27,59 @@ function checkNotificationPermission() {
     const isSafari = /Safari/.test(navigator.userAgent) && !/Chrome/.test(navigator.userAgent);
     
     if (isIOS && isSafari) {
-        // iPhone Safari için alternatif yaklaşım
-        permissionStatus.innerHTML = `
-            <div class="status info">
-                📱 iPhone Safari Bildirim Sistemi<br><br>
-                <strong>iPhone Safari'de bildirimler sınırlıdır.</strong><br>
-                Bu uygulama zamanlanmış hatırlatmalar için tasarlanmıştır.<br><br>
-                <strong>Kullanım:</strong><br>
-                1. Ana ekrana ekleyin<br>
-                2. Belirlenen saatlerde uygulamayı açın<br>
-                3. Hatırlatmalarınızı görün
-            </div>
-        `;
-        requestPermissionBtn.style.display = 'none';
+        // iPhone Safari için gerçek bildirim sistemi
+        if ('Notification' in window) {
+            const permission = Notification.permission;
+            if (permission === 'granted') {
+                permissionStatus.innerHTML = '<div class="status success">✅ iPhone Safari bildirim izni verildi! Gerçek push bildirimleri aktif.</div>';
+                requestPermissionBtn.style.display = 'none';
+            } else if (permission === 'denied') {
+                permissionStatus.innerHTML = `
+                    <div class="status error">
+                        ❌ iPhone Safari bildirim izni reddedildi<br><br>
+                        <strong>Çözüm:</strong><br>
+                        1. iPhone Ayarlar > Safari > Web Sitesi Ayarları<br>
+                        2. Bildirimler bölümüne gidin<br>
+                        3. Bu site için "İzin Ver" seçin<br>
+                        4. Sayfayı yenileyin
+                    </div>
+                `;
+                requestPermissionBtn.style.display = 'block';
+                requestPermissionBtn.textContent = 'iPhone Ayarları';
+            } else {
+                permissionStatus.innerHTML = `
+                    <div class="status info">
+                        📱 iPhone Safari Push Bildirimleri<br><br>
+                        <strong>Gerçek bildirimler için izin verin!</strong><br>
+                        WhatsApp gibi bildirimler alacaksınız.<br><br>
+                        <strong>Not:</strong> iPhone Safari'de bazen bildirimler gecikebilir.
+                    </div>
+                `;
+                requestPermissionBtn.style.display = 'block';
+                requestPermissionBtn.textContent = 'Bildirim İzni Ver';
+            }
+        } else {
+            permissionStatus.innerHTML = '<div class="status error">❌ Bu iPhone Safari sürümü bildirimleri desteklemiyor</div>';
+            requestPermissionBtn.style.display = 'none';
+        }
         return;
     }
     
     if ('Notification' in window) {
         const permission = Notification.permission;
         if (permission === 'granted') {
-            permissionStatus.innerHTML = '<div class="status success">✅ Bildirim izni verildi</div>';
+            permissionStatus.innerHTML = '<div class="status success">✅ Bildirim izni verildi! Gerçek push bildirimleri aktif.</div>';
             requestPermissionBtn.style.display = 'none';
         } else if (permission === 'denied') {
             permissionStatus.innerHTML = '<div class="status error">❌ Bildirim izni reddedildi. Tarayıcı ayarlarından izin verin.</div>';
             requestPermissionBtn.style.display = 'none';
         } else {
-            permissionStatus.innerHTML = '<div class="status info">ℹ️ Bildirim izni gerekli</div>';
+            permissionStatus.innerHTML = '<div class="status info">ℹ️ Gerçek push bildirimleri için izin verin</div>';
             requestPermissionBtn.style.display = 'block';
             requestPermissionBtn.textContent = 'Bildirim İzni Ver';
         }
     } else {
-        permissionStatus.innerHTML = `
-            <div class="status info">
-                ℹ️ Bu tarayıcı push bildirimleri desteklemiyor<br><br>
-                <strong>Alternatif:</strong><br>
-                Ana ekrana ekleyerek zamanlanmış hatırlatmalar kullanabilirsiniz.
-            </div>
-        `;
+        permissionStatus.innerHTML = '<div class="status error">❌ Bu tarayıcı push bildirimleri desteklemiyor</div>';
         requestPermissionBtn.style.display = 'none';
     }
 }
@@ -74,8 +90,21 @@ requestPermissionBtn.addEventListener('click', async () => {
     const isSafari = /Safari/.test(navigator.userAgent) && !/Chrome/.test(navigator.userAgent);
     
     if (isIOS && isSafari) {
-        // iPhone Safari için özel talimat
-        alert('iPhone Safari\'de bildirim izni için:\n\n1. iPhone Ayarlar > Safari > Web Sitesi Ayarları\n2. Bildirimler bölümüne gidin\n3. Bu site için "İzin Ver" seçin\n4. Sayfayı yenileyin');
+        // iPhone Safari için gerçek bildirim izni isteme
+        if ('Notification' in window) {
+            try {
+                const permission = await Notification.requestPermission();
+                if (permission === 'granted') {
+                    alert('✅ Bildirim izni verildi! Artık WhatsApp gibi gerçek push bildirimleri alacaksınız.');
+                    checkNotificationPermission();
+                } else if (permission === 'denied') {
+                    alert('❌ Bildirim izni reddedildi. iPhone Ayarlar > Safari > Web Sitesi Ayarları > Bildirimler\'den manuel olarak izin verin.');
+                    checkNotificationPermission();
+                }
+            } catch (error) {
+                alert('iPhone Safari\'de bildirim izni için:\n\n1. iPhone Ayarlar > Safari > Web Site Ayarları\n2. Bildirimler bölümüne gidin\n3. Bu site için "İzin Ver" seçin\n4. Sayfayı yenileyin');
+            }
+        }
         return;
     }
     
@@ -88,12 +117,43 @@ requestPermissionBtn.addEventListener('click', async () => {
 // Test bildirimi gönderme
 testNotificationBtn.addEventListener('click', () => {
     if (Notification.permission === 'granted') {
-        new Notification('Test Bildirimi', {
-            body: 'Bu bir test bildirimidir!',
+        // WhatsApp gibi gerçek test bildirimi
+        const testNotification = new Notification('🔔 Test Bildirimi', {
+            body: 'Bu bir test bildirimidir! WhatsApp gibi gerçek push bildirim.',
             icon: '/FurkAI_Project/icon-192.png',
             badge: '/FurkAI_Project/icon-192.png',
-            vibrate: [100, 50, 100]
+            vibrate: [200, 100, 200, 100, 200], // WhatsApp gibi titreşim
+            requireInteraction: true, // Otomatik kapanmasın
+            silent: false, // Ses çıkar
+            tag: 'test-notification',
+            data: {
+                type: 'test',
+                timestamp: Date.now()
+            },
+            actions: [
+                {
+                    action: 'view',
+                    title: 'Görüntüle',
+                    icon: '/FurkAI_Project/icon-192.png'
+                },
+                {
+                    action: 'dismiss',
+                    title: 'Kapat',
+                    icon: '/FurkAI_Project/icon-192.png'
+                }
+            ]
         });
+
+        // Bildirim tıklama olayı
+        testNotification.onclick = function() {
+            window.focus();
+            testNotification.close();
+        };
+
+        // Bildirim gösterildiğinde log
+        testNotification.onshow = function() {
+            console.log('Test bildirimi gösterildi');
+        };
     } else {
         alert('Önce bildirim izni vermeniz gerekiyor!');
     }
@@ -188,15 +248,54 @@ function checkScheduledNotifications() {
     
     notifications.forEach(notification => {
         if (notification.time === currentTime && notification.days.includes(currentDay)) {
-            // Bildirimi gönder
+            // Gerçek push bildirimi gönder
             if (Notification.permission === 'granted') {
-            new Notification('Zamanlanmış Bildirim', {
-                body: notification.text,
-                icon: '/FurkAI_Project/icon-192.png',
-                badge: '/FurkAI_Project/icon-192.png',
-                vibrate: [100, 50, 100],
-                tag: `notification-${notification.id}`
-            });
+                // WhatsApp gibi gerçek bildirim
+                const notificationOptions = {
+                    body: notification.text,
+                    icon: '/FurkAI_Project/icon-192.png',
+                    badge: '/FurkAI_Project/icon-192.png',
+                    vibrate: [200, 100, 200, 100, 200], // WhatsApp gibi titreşim
+                    requireInteraction: true, // Otomatik kapanmasın
+                    silent: false, // Ses çıkar
+                    tag: `scheduled-${notification.id}`, // Benzersiz tag
+                    data: {
+                        notificationId: notification.id,
+                        type: 'scheduled',
+                        timestamp: Date.now()
+                    },
+                    actions: [
+                        {
+                            action: 'view',
+                            title: 'Görüntüle',
+                            icon: '/FurkAI_Project/icon-192.png'
+                        },
+                        {
+                            action: 'dismiss',
+                            title: 'Kapat',
+                            icon: '/FurkAI_Project/icon-192.png'
+                        }
+                    ]
+                };
+
+                // Gerçek push bildirimi oluştur
+                const pushNotification = new Notification('🔔 Zamanlanmış Bildirim', notificationOptions);
+                
+                // Bildirim tıklama olayı
+                pushNotification.onclick = function() {
+                    window.focus();
+                    pushNotification.close();
+                };
+
+                // Bildirim hatası kontrolü
+                pushNotification.onerror = function(error) {
+                    console.error('Bildirim hatası:', error);
+                };
+
+                // Bildirim gösterildiğinde log
+                pushNotification.onshow = function() {
+                    console.log('Zamanlanmış bildirim gösterildi:', notification.text);
+                };
             }
         }
     });
