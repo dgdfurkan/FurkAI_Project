@@ -84,10 +84,16 @@ const savedNotifications = document.getElementById('savedNotifications');
 const testNotificationBtn = document.getElementById('testNotification');
 const debugTimeBtn = document.getElementById('debugTime');
 
-// Bildirim izni kontrolü
+// Bildirim izni kontrolü - iPhone Safari uyumlu
 function checkNotificationPermission() {
   const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
   const isSafari = /Safari/.test(navigator.userAgent) && !/Chrome/.test(navigator.userAgent);
+  
+  console.log('Bildirim izni kontrolü:', {
+    isIOS: isIOS,
+    isSafari: isSafari,
+    permission: Notification.permission
+  });
   
   if (isIOS && isSafari) {
     if ('Notification' in window) {
@@ -95,6 +101,7 @@ function checkNotificationPermission() {
       if (permission === 'granted') {
         permissionStatus.innerHTML = '<div class="status success">✅ iPhone Safari bildirim izni verildi! Canlı push bildirimleri aktif.</div>';
         requestPermissionBtn.style.display = 'none';
+        console.log('✅ iPhone Safari bildirim izni aktif');
       } else if (permission === 'denied') {
         permissionStatus.innerHTML = `
           <div class="status error">
@@ -108,6 +115,7 @@ function checkNotificationPermission() {
         `;
         requestPermissionBtn.style.display = 'block';
         requestPermissionBtn.textContent = 'iPhone Ayarları';
+        console.log('❌ iPhone Safari bildirim izni reddedildi');
       } else {
         permissionStatus.innerHTML = `
           <div class="status info">
@@ -118,10 +126,12 @@ function checkNotificationPermission() {
         `;
         requestPermissionBtn.style.display = 'block';
         requestPermissionBtn.textContent = 'Bildirim İzni Ver';
+        console.log('ℹ️ iPhone Safari bildirim izni bekleniyor');
       }
     } else {
       permissionStatus.innerHTML = '<div class="status error">❌ Bu iPhone Safari sürümü bildirimleri desteklemiyor</div>';
       requestPermissionBtn.style.display = 'none';
+      console.log('❌ iPhone Safari bildirim desteklenmiyor');
     }
     return;
   }
@@ -131,17 +141,21 @@ function checkNotificationPermission() {
     if (permission === 'granted') {
       permissionStatus.innerHTML = '<div class="status success">✅ Bildirim izni verildi! Canlı push bildirimleri aktif.</div>';
       requestPermissionBtn.style.display = 'none';
+      console.log('✅ Bildirim izni aktif');
     } else if (permission === 'denied') {
       permissionStatus.innerHTML = '<div class="status error">❌ Bildirim izni reddedildi. Tarayıcı ayarlarından izin verin.</div>';
       requestPermissionBtn.style.display = 'none';
+      console.log('❌ Bildirim izni reddedildi');
     } else {
       permissionStatus.innerHTML = '<div class="status info">ℹ️ Canlı push bildirimleri için izin verin</div>';
       requestPermissionBtn.style.display = 'block';
       requestPermissionBtn.textContent = 'Bildirim İzni Ver';
+      console.log('ℹ️ Bildirim izni bekleniyor');
     }
   } else {
     permissionStatus.innerHTML = '<div class="status error">❌ Bu tarayıcı push bildirimleri desteklemiyor</div>';
     requestPermissionBtn.style.display = 'none';
+    console.log('❌ Bildirim desteklenmiyor');
   }
 }
 
@@ -150,6 +164,8 @@ requestPermissionBtn.addEventListener('click', async () => {
   if ('Notification' in window) {
     try {
       const permission = await Notification.requestPermission();
+      console.log('Bildirim izni sonucu:', permission);
+      
       if (permission === 'granted') {
         // iPhone Safari için Service Worker'ın hazır olmasını bekle
         const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
@@ -164,8 +180,17 @@ requestPermissionBtn.addEventListener('click', async () => {
           console.log('Service Worker hatası, devam ediliyor:', swError);
         }
         
-        alert('✅ Bildirim izni verildi! Canlı push bildirimleri aktif.');
+        // UI'yi hemen güncelle
         checkNotificationPermission();
+        
+        // iPhone Safari için ekstra bekleme ve tekrar kontrol
+        if (isIOS) {
+          setTimeout(() => {
+            checkNotificationPermission();
+          }, 1000);
+        }
+        
+        alert('✅ Bildirim izni verildi! Canlı push bildirimleri aktif.');
       } else {
         alert('❌ Bildirim izni reddedildi. Tarayıcı ayarlarından izin verin.');
         checkNotificationPermission();
