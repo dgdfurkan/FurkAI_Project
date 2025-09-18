@@ -1,16 +1,11 @@
 {
   "version": 2,
-  "functions": {
-    "api/subscribe.js": {
-      "runtime": "nodejs18.x"
-    },
-    "api/send.js": {
-      "runtime": "nodejs18.x"
-    },
-    "api/schedule.js": {
-      "runtime": "nodejs18.x"
+  "builds": [
+    {
+      "src": "api/**/*.js",
+      "use": "@vercel/node"
     }
-  },
+  ],
   "routes": [
     {
       "src": "/api/(.*)",
