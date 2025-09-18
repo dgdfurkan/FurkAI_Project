@@ -294,7 +294,17 @@ function checkScheduledNotifications() {
         notifications: notifications.length
     });
     
-    notifications.forEach(notification => {
+    notifications.forEach((notification, index) => {
+        console.log(`Bildirim ${index + 1}:`, {
+            text: notification.text,
+            time: notification.time,
+            days: notification.days,
+            currentTime: currentTime,
+            currentDay: currentDay,
+            timeMatch: notification.time === currentTime,
+            dayMatch: notification.days.includes(currentDay)
+        });
+        
         if (notification.time === currentTime && notification.days.includes(currentDay)) {
             // Daha önce bu bildirim gönderilmiş mi kontrol et
             const lastSentKey = `lastSent_${notification.id}_${currentDay}_${currentTime}`;
@@ -303,6 +313,8 @@ function checkScheduledNotifications() {
             
             // Eğer bu bildirim bugün bu saatte daha önce gönderilmemişse
             if (!lastSent || (now - parseInt(lastSent)) > 60000) { // 1 dakika tolerans
+                console.log('Bildirim gönderiliyor:', notification.text);
+                console.log('Bildirim izni:', Notification.permission);
                 // Gerçek push bildirimi gönder
                 if (Notification.permission === 'granted') {
                     // WhatsApp gibi gerçek bildirim
@@ -349,12 +361,23 @@ function checkScheduledNotifications() {
 
                     // Bildirim gösterildiğinde log ve kaydet
                     pushNotification.onshow = function() {
-                        console.log('Zamanlanmış bildirim gösterildi:', notification.text);
+                        console.log('✅ Zamanlanmış bildirim gösterildi:', notification.text);
                         // Bu bildirimin gönderildiğini kaydet
                         localStorage.setItem(lastSentKey, now.toString());
                     };
+                    
+                    console.log('Bildirim oluşturuldu:', notification.text);
+                } else {
+                    console.log('❌ Bildirim izni yok:', Notification.permission);
                 }
+            } else {
+                console.log('Bildirim daha önce gönderilmiş:', lastSent);
             }
+        } else {
+            console.log('Bildirim eşleşmedi:', {
+                timeMatch: notification.time === currentTime,
+                dayMatch: notification.days.includes(currentDay)
+            });
         }
     });
 }
