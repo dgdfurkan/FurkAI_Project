@@ -303,7 +303,7 @@ debugTimeBtn.addEventListener('click', () => {
   checkScheduledNotifications();
 });
 
-// Bildirim formu işleme
+// Bildirim formu işleme - Mantıklı form validasyonu
 notificationForm.addEventListener('submit', (e) => {
   e.preventDefault();
   
@@ -312,12 +312,22 @@ notificationForm.addEventListener('submit', (e) => {
   const time = document.getElementById('notificationTime').value;
   const dayCheckboxes = document.querySelectorAll('input[type="checkbox"]:checked');
   
-  if (dayCheckboxes.length === 0) {
-    alert('En az bir gün seçmelisiniz!');
-    return;
+  // Eğer tarih seçilmişse, gün seçimi gerekli değil
+  let days = [];
+  if (date) {
+    // Tarih seçilmişse, o tarihin gününü hesapla
+    const selectedDate = new Date(date);
+    const dayOfWeek = selectedDate.getDay();
+    days = [dayOfWeek];
+    console.log('Tarih seçildi, gün hesaplandı:', dayOfWeek);
+  } else {
+    // Tarih seçilmemişse, gün seçimi zorunlu
+    if (dayCheckboxes.length === 0) {
+      alert('En az bir gün seçmelisiniz veya belirli bir tarih seçmelisiniz!');
+      return;
+    }
+    days = Array.from(dayCheckboxes).map(cb => parseInt(cb.value));
   }
-  
-  const days = Array.from(dayCheckboxes).map(cb => parseInt(cb.value));
   
   const notification = {
     id: Date.now(),
@@ -325,7 +335,8 @@ notificationForm.addEventListener('submit', (e) => {
     date: date,
     time: time,
     days: days,
-    createdAt: new Date().toISOString()
+    createdAt: new Date().toISOString(),
+    sent: false // Bildirim gönderilip gönderilmediğini takip et
   };
   
   saveNotification(notification);
@@ -340,10 +351,20 @@ notificationForm.addEventListener('submit', (e) => {
   alert('✅ Bildirim başarıyla kaydedildi! Canlı alarm sistemi aktif.');
 });
 
-// Bildirimleri localStorage'a kaydetme
+// Bildirimleri localStorage'a kaydetme - Güncelleme desteği ile
 function saveNotification(notification) {
   let notifications = JSON.parse(localStorage.getItem('notifications') || '[]');
-  notifications.push(notification);
+  
+  // Eğer bildirim zaten varsa (id ile), güncelle
+  const existingIndex = notifications.findIndex(n => n.id === notification.id);
+  if (existingIndex !== -1) {
+    notifications[existingIndex] = notification;
+    console.log('Bildirim güncellendi:', notification.id);
+  } else {
+    notifications.push(notification);
+    console.log('Yeni bildirim eklendi:', notification.id);
+  }
+  
   localStorage.setItem('notifications', JSON.stringify(notifications));
 }
 
@@ -352,7 +373,7 @@ function loadNotifications() {
   return JSON.parse(localStorage.getItem('notifications') || '[]');
 }
 
-// Bildirimleri ekranda gösterme
+// Bildirimleri ekranda gösterme - Gönderilmiş durumu ile
 function displayNotifications() {
   const notifications = loadNotifications();
   
@@ -365,13 +386,17 @@ function displayNotifications() {
     const dayNames = ['Pazartesi', 'Salı', 'Çarşamba', 'Perşembe', 'Cuma', 'Cumartesi', 'Pazar'];
     const selectedDays = notification.days.map(day => dayNames[day]).join(', ');
     
+    const statusClass = notification.sent ? 'sent' : 'pending';
+    const statusText = notification.sent ? '✅ Gönderildi' : '⏳ Bekliyor';
+    
     return `
-      <div class="notification-item">
+      <div class="notification-item ${statusClass}">
         <div class="notification-info">
           <div class="notification-text">${notification.text}</div>
           <div class="notification-time">🕐 ${notification.time}</div>
           <div class="notification-date">📅 ${notification.date || 'Her gün'}</div>
           <div class="notification-days">📅 ${selectedDays}</div>
+          <div class="notification-status">${statusText}</div>
         </div>
         <button class="delete-btn" onclick="deleteNotification(${notification.id})">Sil</button>
       </div>
@@ -390,7 +415,7 @@ function deleteNotification(id) {
   }
 }
 
-// Zamanlanmış bildirimleri kontrol etme
+// Zamanlanmış bildirimleri kontrol etme - Duplicate önleme ile
 function checkScheduledNotifications() {
   const notifications = loadNotifications();
   
@@ -408,6 +433,12 @@ function checkScheduledNotifications() {
   });
   
   notifications.forEach((notification, index) => {
+    // Eğer bildirim daha önce gönderilmişse, atla
+    if (notification.sent) {
+      console.log(`Bildirim ${index + 1} daha önce gönderilmiş, atlanıyor:`, notification.text);
+      return;
+    }
+    
     const timeMatch = notification.time === currentTime;
     const dayMatch = notification.days.includes(currentDay);
     const dateMatch = !notification.date || notification.date === currentDate;
@@ -419,55 +450,56 @@ function checkScheduledNotifications() {
       days: notification.days,
       timeMatch,
       dayMatch,
-      dateMatch
+      dateMatch,
+      sent: notification.sent
     });
     
     if (timeMatch && dayMatch && dateMatch) {
-      const lastSentKey = `lastSent_${notification.id}_${currentDay}_${currentTime}`;
-      const lastSent = localStorage.getItem(lastSentKey);
-      const now = Date.now();
+      console.log('✅ Bildirim gönderiliyor:', notification.text);
       
-      if (!lastSent || (now - parseInt(lastSent)) > 60000) {
-        console.log('✅ Bildirim gönderiliyor:', notification.text);
+      if (Notification.permission === 'granted') {
+        // iPhone Safari için özel optimizasyon
+        const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+        const isSafari = /Safari/.test(navigator.userAgent) && !/Chrome/.test(navigator.userAgent);
         
-        if (Notification.permission === 'granted') {
-          // iPhone Safari için özel optimizasyon
-          const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
-          const isSafari = /Safari/.test(navigator.userAgent) && !/Chrome/.test(navigator.userAgent);
-          
-          const notificationOptions = {
-            body: notification.text,
-            icon: '/icon-192.png',
-            badge: '/icon-192.png',
-            vibrate: isIOS ? [200, 100, 200] : [200, 100, 200, 100, 200],
-            requireInteraction: true,
-            silent: false,
-            tag: `scheduled-${notification.id}-${currentDay}`,
-            data: {
-              notificationId: notification.id,
-              type: 'scheduled',
-              timestamp: now
-            }
-          };
+        const notificationOptions = {
+          body: notification.text,
+          icon: '/icon-192.png',
+          badge: '/icon-192.png',
+          vibrate: isIOS ? [200, 100, 200] : [200, 100, 200, 100, 200],
+          requireInteraction: true,
+          silent: false,
+          tag: `scheduled-${notification.id}-${currentDay}`,
+          data: {
+            notificationId: notification.id,
+            type: 'scheduled',
+            timestamp: now
+          }
+        };
 
-          // iPhone Safari için özel başlık
-          const title = isIOS && isSafari ? '🔔 Bildirim' : '🔔 Zamanlanmış Bildirim';
-          const pushNotification = new Notification(title, notificationOptions);
-          
-          pushNotification.onclick = function() {
-            window.focus();
-            pushNotification.close();
-          };
+        // iPhone Safari için özel başlık
+        const title = isIOS && isSafari ? '🔔 Bildirim' : '🔔 Zamanlanmış Bildirim';
+        const pushNotification = new Notification(title, notificationOptions);
+        
+        pushNotification.onclick = function() {
+          window.focus();
+          pushNotification.close();
+        };
 
-          pushNotification.onshow = function() {
-            console.log('✅ Zamanlanmış bildirim gösterildi:', notification.text);
-            localStorage.setItem(lastSentKey, now.toString());
-          };
+        pushNotification.onshow = function() {
+          console.log('✅ Zamanlanmış bildirim gösterildi:', notification.text);
           
-          pushNotification.onerror = function(error) {
-            console.error('Bildirim hatası:', error);
-          };
-        }
+          // Bildirimi gönderildi olarak işaretle
+          notification.sent = true;
+          saveNotification(notification);
+          
+          // UI'yi güncelle
+          displayNotifications();
+        };
+        
+        pushNotification.onerror = function(error) {
+          console.error('Bildirim hatası:', error);
+        };
       }
     }
   });
