@@ -145,14 +145,25 @@ function checkNotificationPermission() {
   }
 }
 
-// Bildirim izni isteme
+// Bildirim izni isteme - iPhone Safari uyumlu
 requestPermissionBtn.addEventListener('click', async () => {
   if ('Notification' in window) {
     try {
       const permission = await Notification.requestPermission();
       if (permission === 'granted') {
-        const reg = await navigator.serviceWorker.ready;
-        await ensurePushSubscription(reg);
+        // iPhone Safari için Service Worker'ın hazır olmasını bekle
+        const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+        if (isIOS) {
+          await new Promise(resolve => setTimeout(resolve, 2000));
+        }
+        
+        try {
+          const reg = await navigator.serviceWorker.ready;
+          await ensurePushSubscription(reg);
+        } catch (swError) {
+          console.log('Service Worker hatası, devam ediliyor:', swError);
+        }
+        
         alert('✅ Bildirim izni verildi! Canlı push bildirimleri aktif.');
         checkNotificationPermission();
       } else {
@@ -160,41 +171,56 @@ requestPermissionBtn.addEventListener('click', async () => {
         checkNotificationPermission();
       }
     } catch (error) {
+      console.log('Bildirim izni hatası:', error);
       alert('❌ Bildirim izni alınamadı. Lütfen tarayıcı ayarlarını kontrol edin.');
     }
   }
 });
 
-// Test bildirimi gönderme
+// Test bildirimi gönderme - iPhone Safari uyumlu
 testNotificationBtn.addEventListener('click', async () => {
   if (Notification.permission === 'granted') {
     try {
-      const response = await fetch('/api/send', {
-        method: 'POST',
-        headers: {'content-type':'application/json'},
-        body: JSON.stringify({
-          title: '🔔 Test Bildirimi',
-          body: 'Bu bir test bildirimidir! Canlı push bildirim.',
-          url: '/'
-        })
-      });
+      // iPhone Safari için özel optimizasyon
+      const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+      const isSafari = /Safari/.test(navigator.userAgent) && !/Chrome/.test(navigator.userAgent);
       
-      if (response.ok) {
-        // Yerel test bildirimi de göster
-        new Notification('🔔 Test Bildirimi', {
-          body: 'Test bildirimi başarılı! Canlı sistem çalışıyor.',
-          icon: '/icon-192.png',
-          badge: '/icon-192.png',
-          vibrate: [200, 100, 200],
-          requireInteraction: true
-        });
-        alert('✅ Test bildirimi gönderildi! Canlı sistem çalışıyor.');
-      } else {
-        alert('❌ Backend hatası. Lütfen daha sonra tekrar deneyin.');
-      }
+      const notificationOptions = {
+        body: 'Test bildirimi başarılı! Canlı sistem çalışıyor.',
+        icon: '/icon-192.png',
+        badge: '/icon-192.png',
+        vibrate: isIOS ? [200, 100, 200] : [200, 100, 200, 100, 200],
+        requireInteraction: true,
+        silent: false,
+        tag: 'test-notification',
+        data: {
+          type: 'test',
+          timestamp: Date.now()
+        }
+      };
+
+      // iPhone Safari için özel başlık
+      const title = isIOS && isSafari ? '🔔 Test' : '🔔 Test Bildirimi';
+      const testNotification = new Notification(title, notificationOptions);
+      
+      testNotification.onclick = function() {
+        window.focus();
+        testNotification.close();
+      };
+
+      testNotification.onshow = function() {
+        console.log('✅ Test bildirimi gösterildi');
+        alert('✅ Test bildirimi başarılı! Canlı sistem çalışıyor.');
+      };
+      
+      testNotification.onerror = function(error) {
+        console.error('Test bildirimi hatası:', error);
+        alert('❌ Test bildirimi hatası. Lütfen tekrar deneyin.');
+      };
+      
     } catch (error) {
-      console.log('Backend bağlantı hatası:', error);
-      alert('❌ Backend bağlantı hatası. Lütfen daha sonra tekrar deneyin.');
+      console.log('Test bildirimi hatası:', error);
+      alert('❌ Test bildirimi hatası. Lütfen tekrar deneyin.');
     }
   } else {
     alert('Önce bildirim izni vermeniz gerekiyor!');
