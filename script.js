@@ -14,6 +14,24 @@ function urlBase64ToUint8Array(base64String) {
   return outputArray;
 }
 
+// Backend log gönderme
+async function sendLog(level, message, data = {}) {
+  try {
+    await fetch('/api/logs', {
+      method: 'POST',
+      headers: {'content-type':'application/json'},
+      body: JSON.stringify({
+        level: level,
+        message: message,
+        data: data,
+        timestamp: new Date().toISOString()
+      })
+    });
+  } catch (error) {
+    console.log('Log gönderme hatası:', error);
+  }
+}
+
 // Push aboneliği oluştur ve backend'e gönder
 async function ensurePushSubscription(reg) {
   let sub = await reg.pushManager.getSubscription();
@@ -37,11 +55,17 @@ async function ensurePushSubscription(reg) {
     
     if (response.ok) {
       console.log('✅ Push aboneliği backend\'e kaydedildi');
+      await sendLog('info', 'Push aboneliği başarılı', { 
+        endpoint: sub.endpoint,
+        timezone: Intl.DateTimeFormat().resolvedOptions().timeZone
+      });
     } else {
       console.log('❌ Backend abonelik hatası');
+      await sendLog('error', 'Push abonelik hatası', { status: response.status });
     }
   } catch (error) {
     console.log('❌ Backend bağlantı hatası:', error);
+    await sendLog('error', 'Backend bağlantı hatası', { error: error.message });
   }
 }
 
@@ -322,6 +346,36 @@ debugTimeBtn.addEventListener('click', () => {
   checkScheduledNotifications();
 });
 
+// Backend logları görüntüleme
+const viewLogsBtn = document.getElementById('viewLogs');
+viewLogsBtn.addEventListener('click', async () => {
+  try {
+    const response = await fetch('/api/logs?limit=20');
+    const data = await response.json();
+    
+    if (data.success) {
+      let logText = `📊 Backend Logları (Son ${data.logs.length} kayıt):\n\n`;
+      
+      data.logs.reverse().forEach((log, index) => {
+        const time = new Date(log.timestamp).toLocaleString('tr-TR');
+        logText += `${index + 1}. [${log.level.toUpperCase()}] ${time}\n`;
+        logText += `   ${log.message}\n`;
+        if (Object.keys(log.data).length > 0) {
+          logText += `   Veri: ${JSON.stringify(log.data, null, 2)}\n`;
+        }
+        logText += '\n';
+      });
+      
+      alert(logText);
+    } else {
+      alert('❌ Loglar alınamadı');
+    }
+  } catch (error) {
+    console.log('Log alma hatası:', error);
+    alert('❌ Backend bağlantı hatası');
+  }
+});
+
 // Bildirim formu işleme - Mantıklı form validasyonu
 notificationForm.addEventListener('submit', (e) => {
   e.preventDefault();
@@ -334,11 +388,13 @@ notificationForm.addEventListener('submit', (e) => {
   // Eğer tarih seçilmişse, gün seçimi gerekli değil
   let days = [];
   if (date) {
-    // Tarih seçilmişse, o tarihin gününü hesapla
-    const selectedDate = new Date(date);
+    // Tarih seçilmişse, o tarihin gününü hesapla (Türkiye saatine göre)
+    const selectedDate = new Date(date + 'T00:00:00'); // Yerel saat olarak parse et
     const dayOfWeek = selectedDate.getDay();
     days = [dayOfWeek];
-    console.log('Tarih seçildi, gün hesaplandı:', dayOfWeek);
+    
+    const dayNames = ['Pazar', 'Pazartesi', 'Salı', 'Çarşamba', 'Perşembe', 'Cuma', 'Cumartesi'];
+    console.log('Tarih seçildi:', date, 'Gün hesaplandı:', dayOfWeek, '(' + dayNames[dayOfWeek] + ')');
   } else {
     // Tarih seçilmemişse, gün seçimi zorunlu
     if (dayCheckboxes.length === 0) {
@@ -562,6 +618,15 @@ function checkScheduledNotifications() {
 
         pushNotification.onshow = function() {
           console.log('✅ Zamanlanmış bildirim gösterildi:', notification.text);
+          
+          // Backend'e log gönder
+          sendLog('info', 'Zamanlanmış bildirim gönderildi', {
+            notificationId: notification.id,
+            text: notification.text,
+            time: notification.time,
+            date: notification.date,
+            timestamp: new Date().toISOString()
+          });
           
           // Bildirimi gönderildi olarak işaretle
           notification.sent = true;

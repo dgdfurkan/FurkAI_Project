@@ -180,6 +180,9 @@ async function checkScheduledNotificationsInSW() {
     const currentDate = turkeyTime.toISOString().split('T')[0];
     const currentDay = turkeyTime.getDay();
     
+    const dayNames = ['Pazar', 'Pazartesi', 'Salı', 'Çarşamba', 'Perşembe', 'Cuma', 'Cumartesi'];
+    console.log('Service Worker: Bugün', dayNames[currentDay], currentDate, currentTime);
+    
     console.log('Service Worker: Bildirim kontrolü:', {
       currentTime: currentTime,
       currentDate: currentDate,
