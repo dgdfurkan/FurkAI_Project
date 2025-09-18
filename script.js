@@ -23,7 +23,7 @@ async function ensurePushSubscription(reg) {
   
   // Backend'e aboneliği kaydet
   try {
-    await fetch('https://backend-icbnt161d-furkans-projects-db4616ff.vercel.app/subscribe', {
+    await fetch('https://bildirim-backend-d47d.onrender.com/subscribe', {
       method: 'POST',
       headers: {'content-type':'application/json'},
       body: JSON.stringify({ 
@@ -167,7 +167,7 @@ testNotificationBtn.addEventListener('click', async () => {
     if (Notification.permission === 'granted') {
         try {
             // Backend'e test bildirimi gönder
-            const response = await fetch('https://backend-icbnt161d-furkans-projects-db4616ff.vercel.app/send', {
+            const response = await fetch('https://bildirim-backend-d47d.onrender.com/send', {
                 method: 'POST',
                 headers: {'content-type':'application/json'},
                 body: JSON.stringify({

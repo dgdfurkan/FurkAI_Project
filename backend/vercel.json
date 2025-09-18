@@ -11,5 +11,10 @@
       "src": "/(.*)",
       "dest": "simple-server.js"
     }
-  ]
+  ],
+  "functions": {
+    "simple-server.js": {
+      "maxDuration": 30
+    }
+  }
 }
