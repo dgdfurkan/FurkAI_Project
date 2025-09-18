@@ -466,9 +466,4 @@ window.addEventListener('appinstalled', (evt) => {
 // Her 30 saniyede kontrol et
 setInterval(checkScheduledNotifications, 30000);
 
-// Versiyon numarasını göster
-document.addEventListener('DOMContentLoaded', () => {
-  const versionElement = document.createElement('div');
-  versionElement.innerHTML = '<p style="text-align: center; color: #666; font-size: 12px; margin-top: 20px;">Bildirim Sistemi v2.0.0</p>';
-  document.querySelector('footer').appendChild(versionElement);
-});
+// Versiyon numarası artık HTML'de sabit olarak gösteriliyor
