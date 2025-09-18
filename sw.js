@@ -106,3 +106,38 @@ self.addEventListener('notificationclick', function(event) {
     );
   }
 });
+
+// Zamanlanmış bildirimleri kontrol etme (Service Worker'da)
+function checkScheduledNotificationsInSW() {
+  // LocalStorage'a erişim için client'ı kullan
+  return clients.matchAll().then(clients => {
+    if (clients.length > 0) {
+      // Client'a mesaj gönder
+      clients.forEach(client => {
+        client.postMessage({
+          type: 'CHECK_SCHEDULED_NOTIFICATIONS',
+          timestamp: Date.now()
+        });
+      });
+    }
+  });
+}
+
+// Her dakika zamanlanmış bildirimleri kontrol et
+setInterval(() => {
+  checkScheduledNotificationsInSW();
+}, 60000);
+
+// Background sync için
+self.addEventListener('sync', function(event) {
+  if (event.tag === 'background-sync') {
+    event.waitUntil(checkScheduledNotificationsInSW());
+  }
+});
+
+// Periodic background sync (PWA için)
+self.addEventListener('periodicsync', function(event) {
+  if (event.tag === 'notification-sync') {
+    event.waitUntil(checkScheduledNotificationsInSW());
+  }
+});

@@ -4,12 +4,31 @@ if ('serviceWorker' in navigator) {
         navigator.serviceWorker.register('/FurkAI_Project/sw.js')
             .then((registration) => {
                 console.log('SW registered: ', registration);
+                
+                // Periodic background sync kaydı (PWA için)
+                if ('periodicSync' in window.ServiceWorkerRegistration.prototype) {
+                    registration.periodicSync.register('notification-sync', {
+                        minInterval: 60000 // 1 dakika
+                    }).then(() => {
+                        console.log('Periodic sync registered');
+                    }).catch(err => {
+                        console.log('Periodic sync registration failed:', err);
+                    });
+                }
             })
             .catch((registrationError) => {
                 console.log('SW registration failed: ', registrationError);
             });
     });
 }
+
+// Service Worker mesajlarını dinle
+navigator.serviceWorker.addEventListener('message', function(event) {
+    if (event.data.type === 'CHECK_SCHEDULED_NOTIFICATIONS') {
+        console.log('Service Worker bildirim kontrolü tetiklendi');
+        checkScheduledNotifications();
+    }
+});
 
 // DOM elementleri
 const requestPermissionBtn = document.getElementById('requestPermission');
@@ -204,7 +223,10 @@ notificationForm.addEventListener('submit', (e) => {
     // Formu temizle
     notificationForm.reset();
     
-    alert('Bildirim başarıyla kaydedildi!');
+    // Alarm sistemini yeniden kur
+    setupNotificationAlarms();
+    
+    alert('Bildirim başarıyla kaydedildi! Alarm sistemi aktif.');
 });
 
 // Bildirimleri localStorage'a kaydetme
@@ -342,10 +364,63 @@ function checkScheduledNotifications() {
 // Her 30 saniyede kontrol et - gerçek push bildirimler için
 setInterval(checkScheduledNotifications, 30000);
 
+// iPhone Safari PWA için alarm sistemi
+function setupNotificationAlarms() {
+    const notifications = loadNotifications();
+    const now = new Date();
+    const turkeyTime = new Date(now.toLocaleString("en-US", {timeZone: "Europe/Istanbul"}));
+    const currentDay = turkeyTime.getDay();
+    
+    notifications.forEach(notification => {
+        if (notification.days.includes(currentDay)) {
+            // Bildirim saatini hesapla
+            const [hours, minutes] = notification.time.split(':');
+            const alarmTime = new Date(turkeyTime);
+            alarmTime.setHours(parseInt(hours), parseInt(minutes), 0, 0);
+            
+            // Eğer alarm saati geçmişse, yarın için ayarla
+            if (alarmTime <= turkeyTime) {
+                alarmTime.setDate(alarmTime.getDate() + 1);
+            }
+            
+            const timeUntilAlarm = alarmTime.getTime() - turkeyTime.getTime();
+            
+            if (timeUntilAlarm > 0 && timeUntilAlarm < 24 * 60 * 60 * 1000) { // 24 saat içinde
+                console.log(`Bildirim alarmı kuruldu: ${notification.text} - ${notification.time}`);
+                
+                setTimeout(() => {
+                    if (Notification.permission === 'granted') {
+                        const pushNotification = new Notification('🔔 Zamanlanmış Bildirim', {
+                            body: notification.text,
+                            icon: '/FurkAI_Project/icon-192.png',
+                            badge: '/FurkAI_Project/icon-192.png',
+                            vibrate: [200, 100, 200, 100, 200],
+                            requireInteraction: true,
+                            silent: false,
+                            tag: `alarm-${notification.id}`,
+                            data: {
+                                notificationId: notification.id,
+                                type: 'scheduled',
+                                timestamp: Date.now()
+                            }
+                        });
+                        
+                        pushNotification.onclick = function() {
+                            window.focus();
+                            pushNotification.close();
+                        };
+                    }
+                }, timeUntilAlarm);
+            }
+        }
+    });
+}
+
 // Sayfa yüklendiğinde çalıştır
 document.addEventListener('DOMContentLoaded', () => {
     checkNotificationPermission();
     displayNotifications();
+    setupNotificationAlarms(); // Alarm sistemini başlat
     
     // PWA kurulumu için özel mesaj
     let deferredPrompt;
