@@ -71,7 +71,8 @@ main {
 }
 
 .form-group input[type="text"],
-.form-group input[type="time"] {
+.form-group input[type="time"],
+.form-group input[type="date"] {
     width: 100%;
     padding: 12px;
     border: 2px solid #e1e5e9;
@@ -81,10 +82,19 @@ main {
 }
 
 .form-group input[type="text"]:focus,
-.form-group input[type="time"]:focus {
+.form-group input[type="time"]:focus,
+.form-group input[type="date"]:focus {
     outline: none;
     border-color: #667eea;
     box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.form-group small {
+    display: block;
+    margin-top: 5px;
+    color: #666;
+    font-size: 0.85rem;
+    font-style: italic;
 }
 
 .checkbox-group {
@@ -222,6 +232,13 @@ main {
     color: #888;
     font-size: 0.8rem;
     margin-top: 5px;
+}
+
+.notification-date {
+    color: #666;
+    font-size: 0.85rem;
+    margin-top: 3px;
+    font-weight: 500;
 }
 
 .delete-btn {

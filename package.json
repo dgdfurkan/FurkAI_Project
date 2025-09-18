@@ -1,0 +1,26 @@
+{
+  "name": "bildirim-sistemi",
+  "version": "2.0.0",
+  "description": "Canlı Bildirim Sistemi - Tarih ve Saat Desteği",
+  "main": "index.html",
+  "scripts": {
+    "dev": "vercel dev",
+    "build": "echo 'Build completed'",
+    "start": "vercel dev"
+  },
+  "dependencies": {
+    "web-push": "^3.6.6"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "keywords": [
+    "notifications",
+    "pwa",
+    "push-notifications",
+    "reminder",
+    "scheduled"
+  ],
+  "author": "FurkAI",
+  "license": "MIT"
+}

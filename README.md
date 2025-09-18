@@ -1,47 +1,111 @@
-# 🔔 Bildirim Sistemi PWA
+# 🔔 Bildirim Sistemi v2.0.0
 
-Bu proje, GitHub Pages üzerinde çalışan bir Progressive Web App (PWA) bildirim sistemidir. iPhone'da Safari ile ana ekrana eklenebilir ve istediğiniz saat aralıklarında bildirimler alabilirsiniz.
+**Canlı Bildirim Sistemi - Tarih ve Saat Desteği ile Tam Çalışan Sistem**
 
-## 🚀 Özellikler
+## ✨ Özellikler
 
-- ✅ PWA desteği (Ana ekrana eklenebilir)
-- ✅ Zamanlanmış bildirimler
-- ✅ Haftalık tekrarlama
-- ✅ Offline çalışma
-- ✅ Modern ve responsive tasarım
-- ✅ iPhone Safari uyumlu
+- **Canlı Push Bildirimleri**: WhatsApp gibi gerçek push bildirimleri
+- **Tarih ve Saat Desteği**: Tam tarih/saat seçimi ile zamanlanmış bildirimler
+- **iPhone Safari Uyumlu**: iPhone Safari'de tam çalışan bildirim sistemi
+- **PWA Desteği**: Ana ekrana eklenebilir uygulama
+- **Offline Çalışma**: İnternet bağlantısı olmadan da çalışır
+- **Versiyon Takibi**: Her güncellemede versiyon numarası
 
-## 📱 Kurulum
+## 🚀 Kurulum
 
-1. Bu repository'yi GitHub'da fork edin
-2. Repository ayarlarından GitHub Pages'i etkinleştirin
-3. `main` branch'ini seçin
-4. URL'nizi paylaşın
+### Vercel ile Deploy
 
-## 🎯 Kullanım
+1. Bu projeyi GitHub'a yükleyin
+2. Vercel'e bağlayın
+3. Otomatik olarak deploy edilir
+
+### Manuel Kurulum
+
+```bash
+# Bağımlılıkları yükle
+npm install
+
+# Geliştirme sunucusunu başlat
+npm run dev
+
+# Production build
+npm run build
+```
+
+## 📱 Kullanım
 
 1. **Bildirim İzni Verin**: İlk açılışta bildirim izni verin
-2. **Bildirim Ekleyin**: İstediğiniz metin, saat ve günleri seçin
-3. **Ana Ekrana Ekleyin**: Safari'de "Ana Ekrana Ekle" seçeneğini kullanın
-4. **Bildirimleri Alın**: Belirlediğiniz saatlerde otomatik bildirimler alın
+2. **Bildirim Oluşturun**: 
+   - Bildirim metnini girin
+   - Tarih seçin (opsiyonel - boş bırakırsanız her gün çalışır)
+   - Saat seçin
+   - Günleri seçin
+3. **Ana Ekrana Ekleyin**: iPhone Safari'de "Ana Ekrana Ekle" butonunu kullanın
 
 ## 🔧 Teknik Detaylar
 
+### Backend (Vercel Functions)
+- `/api/subscribe` - Push abonelik kaydı
+- `/api/send` - Test bildirimi gönderme
+- `/api/schedule` - Zamanlanmış bildirim gönderme
+
+### Frontend
 - **Service Worker**: Offline çalışma ve push bildirimleri
-- **Local Storage**: Bildirim verilerini saklama
-- **Manifest**: PWA özellikleri
-- **Responsive Design**: Tüm cihazlarda uyumlu
+- **PWA**: Ana ekrana eklenebilir uygulama
+- **LocalStorage**: Bildirim verilerini saklama
+- **Türkiye Saati**: Otomatik saat dilimi ayarı
 
-## 📋 Gereksinimler
+### iPhone Safari Optimizasyonları
+- Özel meta tag'ler
+- Optimize edilmiş bildirim ayarları
+- Fallback mekanizmaları
+- PWA kurulum rehberi
 
-- Modern web tarayıcısı
-- HTTPS bağlantısı (GitHub Pages otomatik sağlar)
-- Bildirim izni
+## 📋 Versiyon Geçmişi
 
-## 🎨 Özelleştirme
+### v2.0.0 (Mevcut)
+- ✅ Tarih ve saat desteği eklendi
+- ✅ Vercel Functions ile backend yenilendi
+- ✅ iPhone Safari optimizasyonları
+- ✅ Versiyon numarası sistemi
+- ✅ Gereksiz kodlar temizlendi
+- ✅ Canlı bildirim sistemi
 
-CSS dosyasını düzenleyerek renkleri ve stilleri değiştirebilirsiniz.
+### v1.0.0
+- İlk sürüm
+- Temel bildirim sistemi
+
+## 🐛 Sorun Giderme
+
+### iPhone Safari'de Bildirimler Gelmiyor
+1. iPhone Ayarlar > Safari > Web Site Ayarları
+2. Bildirimler bölümüne gidin
+3. Bu site için "İzin Ver" seçin
+4. Sayfayı yenileyin
+
+### Bildirimler Gecikiyor
+- iPhone Safari'de bazen bildirimler 1-2 dakika gecikebilir
+- Bu normal bir durumdur ve sistem çalışmaya devam eder
+
+### Ana Ekrana Ekleme
+1. Safari'de sayfayı açın
+2. Paylaş butonuna basın
+3. "Ana Ekrana Ekle" seçin
+4. Uygulama ana ekranınıza eklenecek
 
 ## 📞 Destek
 
-Herhangi bir sorun yaşarsanız, GitHub Issues bölümünden bildirebilirsiniz.
+Herhangi bir sorun yaşarsanız:
+1. Tarayıcı konsolunu kontrol edin
+2. Bildirim izinlerini kontrol edin
+3. İnternet bağlantınızı kontrol edin
+
+## 🔒 Gizlilik
+
+- Tüm veriler tarayıcınızda saklanır
+- Hiçbir kişisel veri sunucuya gönderilmez
+- Push abonelik verileri sadece bildirim göndermek için kullanılır
+
+---
+
+**Bildirim Sistemi v2.0.0** - Canlı bildirimler için tasarlandı! 🚀
