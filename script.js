@@ -1,34 +1,55 @@
-// Service Worker kaydı
-if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => {
-        navigator.serviceWorker.register('/FurkAI_Project/sw.js')
-            .then((registration) => {
-                console.log('SW registered: ', registration);
-                
-                // Periodic background sync kaydı (PWA için)
-                if ('periodicSync' in window.ServiceWorkerRegistration.prototype) {
-                    registration.periodicSync.register('notification-sync', {
-                        minInterval: 60000 // 1 dakika
-                    }).then(() => {
-                        console.log('Periodic sync registered');
-                    }).catch(err => {
-                        console.log('Periodic sync registration failed:', err);
-                    });
-                }
-            })
-            .catch((registrationError) => {
-                console.log('SW registration failed: ', registrationError);
-            });
-    });
+// VAPID Public Key (Backend'den alınacak)
+const VAPID_PUBLIC_KEY = 'BA3KGwqP394aU3744mP7wAWGNhd6t8zIyWNzNx38my-Ki8l5qVq59NNrQsu9GAo7lyQNWtK4rWX63ynRyxoNhy4'; // Örnek key
+
+// VAPID key dönüştürme
+function urlBase64ToUint8Array(base64String) {
+  const padding = '='.repeat((4 - base64String.length % 4) % 4);
+  const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+  const rawData = atob(base64);
+  const outputArray = new Uint8Array(rawData.length);
+  for (let i = 0; i < rawData.length; ++i) outputArray[i] = rawData.charCodeAt(i);
+  return outputArray;
 }
 
-// Service Worker mesajlarını dinle
-navigator.serviceWorker.addEventListener('message', function(event) {
-    if (event.data.type === 'CHECK_SCHEDULED_NOTIFICATIONS') {
-        console.log('Service Worker bildirim kontrolü tetiklendi');
-        checkScheduledNotifications();
+// Push aboneliği oluştur ve backend'e gönder
+async function ensurePushSubscription(reg) {
+  let sub = await reg.pushManager.getSubscription();
+  if (!sub) {
+    sub = await reg.pushManager.subscribe({
+      userVisibleOnly: true,
+      applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY)
+    });
+  }
+  
+  // Backend'e aboneliği kaydet
+  try {
+    await fetch('https://bildirim-backend-d47d.onrender.com/subscribe', {
+      method: 'POST',
+      headers: {'content-type':'application/json'},
+      body: JSON.stringify({ 
+        subscription: sub, 
+        tz: Intl.DateTimeFormat().resolvedOptions().timeZone 
+      })
+    });
+    console.log('Push aboneliği backend\'e kaydedildi');
+  } catch (error) {
+    console.log('Backend bağlantı hatası:', error);
+  }
+}
+
+// Service Worker kaydı ve VAPID aboneliği
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', async () => {
+    const reg = await navigator.serviceWorker.register('/FurkAI_Project/sw.js', { 
+      scope: '/FurkAI_Project/' 
+    });
+    console.log('SW registered: ', reg);
+    
+    if (Notification.permission === 'granted') {
+      await ensurePushSubscription(reg);
     }
-});
+  });
+}
 
 // DOM elementleri
 const requestPermissionBtn = document.getElementById('requestPermission');
@@ -104,76 +125,67 @@ function checkNotificationPermission() {
     }
 }
 
-// Bildirim izni isteme
+// Bildirim izni isteme ve VAPID aboneliği
 requestPermissionBtn.addEventListener('click', async () => {
     const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
     const isSafari = /Safari/.test(navigator.userAgent) && !/Chrome/.test(navigator.userAgent);
     
-    if (isIOS && isSafari) {
-        // iPhone Safari için gerçek bildirim izni isteme
-        if ('Notification' in window) {
-            try {
-                const permission = await Notification.requestPermission();
-                if (permission === 'granted') {
-                    alert('✅ Bildirim izni verildi! Artık WhatsApp gibi gerçek push bildirimleri alacaksınız.');
-                    checkNotificationPermission();
-                } else if (permission === 'denied') {
-                    alert('❌ Bildirim izni reddedildi. iPhone Ayarlar > Safari > Web Sitesi Ayarları > Bildirimler\'den manuel olarak izin verin.');
-                    checkNotificationPermission();
+    if ('Notification' in window) {
+        try {
+            const permission = await Notification.requestPermission();
+            if (permission === 'granted') {
+                // Service Worker'ı al ve VAPID aboneliği oluştur
+                const reg = await navigator.serviceWorker.ready;
+                await ensurePushSubscription(reg);
+                
+                if (isIOS && isSafari) {
+                    alert('✅ iPhone Safari bildirim izni verildi! Gerçek push bildirimleri aktif.');
+                } else {
+                    alert('✅ Bildirim izni verildi! Gerçek push bildirimleri aktif.');
                 }
-            } catch (error) {
+                checkNotificationPermission();
+            } else if (permission === 'denied') {
+                if (isIOS && isSafari) {
+                    alert('❌ Bildirim izni reddedildi. iPhone Ayarlar > Safari > Web Sitesi Ayarları > Bildirimler\'den manuel olarak izin verin.');
+                } else {
+                    alert('❌ Bildirim izni reddedildi. Tarayıcı ayarlarından izin verin.');
+                }
+                checkNotificationPermission();
+            }
+        } catch (error) {
+            if (isIOS && isSafari) {
                 alert('iPhone Safari\'de bildirim izni için:\n\n1. iPhone Ayarlar > Safari > Web Site Ayarları\n2. Bildirimler bölümüne gidin\n3. Bu site için "İzin Ver" seçin\n4. Sayfayı yenileyin');
+            } else {
+                alert('Bildirim izni alınamadı. Lütfen tarayıcı ayarlarını kontrol edin.');
             }
         }
-        return;
-    }
-    
-    if ('Notification' in window) {
-        const permission = await Notification.requestPermission();
-        checkNotificationPermission();
     }
 });
 
-// Test bildirimi gönderme
-testNotificationBtn.addEventListener('click', () => {
+// Test bildirimi gönderme (Backend'e push gönder)
+testNotificationBtn.addEventListener('click', async () => {
     if (Notification.permission === 'granted') {
-        // WhatsApp gibi gerçek test bildirimi
-        const testNotification = new Notification('🔔 Test Bildirimi', {
-            body: 'Bu bir test bildirimidir! WhatsApp gibi gerçek push bildirim.',
-            icon: '/FurkAI_Project/icon-192.png',
-            badge: '/FurkAI_Project/icon-192.png',
-            vibrate: [200, 100, 200, 100, 200], // WhatsApp gibi titreşim
-            requireInteraction: true, // Otomatik kapanmasın
-            silent: false, // Ses çıkar
-            tag: 'test-notification',
-            data: {
-                type: 'test',
-                timestamp: Date.now()
-            },
-            actions: [
-                {
-                    action: 'view',
-                    title: 'Görüntüle',
-                    icon: '/FurkAI_Project/icon-192.png'
-                },
-                {
-                    action: 'dismiss',
-                    title: 'Kapat',
-                    icon: '/FurkAI_Project/icon-192.png'
-                }
-            ]
-        });
-
-        // Bildirim tıklama olayı
-        testNotification.onclick = function() {
-            window.focus();
-            testNotification.close();
-        };
-
-        // Bildirim gösterildiğinde log
-        testNotification.onshow = function() {
-            console.log('Test bildirimi gösterildi');
-        };
+        try {
+            // Backend'e test bildirimi gönder
+            const response = await fetch('https://bildirim-backend-d47d.onrender.com/send', {
+                method: 'POST',
+                headers: {'content-type':'application/json'},
+                body: JSON.stringify({
+                    title: '🔔 Test Bildirimi',
+                    body: 'Bu bir test bildirimidir! WhatsApp gibi gerçek push bildirim.',
+                    url: '/FurkAI_Project/'
+                })
+            });
+            
+            if (response.ok) {
+                alert('✅ Test bildirimi backend\'e gönderildi! Push bildirimi gelmelidir.');
+            } else {
+                alert('❌ Backend hatası. Lütfen daha sonra tekrar deneyin.');
+            }
+        } catch (error) {
+            console.log('Backend bağlantı hatası:', error);
+            alert('❌ Backend bağlantı hatası. Lütfen daha sonra tekrar deneyin.');
+        }
     } else {
         alert('Önce bildirim izni vermeniz gerekiyor!');
     }
@@ -476,3 +488,4 @@ window.addEventListener('appinstalled', (evt) => {
     console.log('PWA kuruldu');
     alert('Uygulama ana ekranınıza eklendi!');
 });
+

@@ -46,98 +46,39 @@ self.addEventListener('fetch', function(event) {
   );
 });
 
-// Push bildirimleri
-self.addEventListener('push', function(event) {
-  let notificationData = {
-    title: 'Bildirim Sistemi',
-    body: 'Yeni bildirim!',
-    icon: '/FurkAI_Project/icon-192.png',
-    badge: '/FurkAI_Project/icon-192.png',
-    vibrate: [100, 50, 100],
-    data: {
-      dateOfArrival: Date.now(),
-      primaryKey: 1
-    }
+// iOS uyumlu push bildirimleri
+self.addEventListener('push', event => {
+  let data = { 
+    title: 'Bildirim Sistemi', 
+    body: 'Yeni bildirim!', 
+    url: '/FurkAI_Project/' 
   };
-
-  // Eğer veri gönderilmişse kullan
+  
   if (event.data) {
-    try {
-      const data = event.data.json();
-      notificationData.title = data.title || 'Bildirim Sistemi';
-      notificationData.body = data.body || 'Yeni bildirim!';
-      notificationData.data = { ...notificationData.data, ...data };
-    } catch (e) {
-      notificationData.body = event.data.text();
+    try { 
+      data = { ...data, ...event.data.json() }; 
+    } catch { 
+      data.body = event.data.text(); 
     }
   }
-
-  const options = {
-    ...notificationData,
-    actions: [
-      {
-        action: 'explore',
-        title: 'Görüntüle',
-        icon: '/FurkAI_Project/icon-192.png'
-      },
-      {
-        action: 'close',
-        title: 'Kapat',
-        icon: '/FurkAI_Project/icon-192.png'
-      }
-    ],
-    requireInteraction: true, // Bildirimi otomatik kapatma
-    silent: false, // Ses çıkar
-    tag: 'bildirim-sistemi' // Aynı tag'li bildirimleri değiştir
-  };
-
+  
   event.waitUntil(
-    self.registration.showNotification(notificationData.title, options)
+    self.registration.showNotification(data.title, {
+      body: data.body,
+      icon: '/FurkAI_Project/icon-192.png',
+      badge: '/FurkAI_Project/icon-192.png',
+      tag: 'bildirim-sistemi',
+      data
+    })
   );
 });
 
-// Bildirim tıklama olayları
-self.addEventListener('notificationclick', function(event) {
+// iOS uyumlu bildirim tıklama
+self.addEventListener('notificationclick', event => {
   event.notification.close();
-
-  if (event.action === 'explore') {
-    event.waitUntil(
-      clients.openWindow('/FurkAI_Project/')
-    );
-  }
+  const url = event.notification.data?.url || '/FurkAI_Project/';
+  event.waitUntil(clients.openWindow(url));
 });
 
-// Zamanlanmış bildirimleri kontrol etme (Service Worker'da)
-function checkScheduledNotificationsInSW() {
-  // LocalStorage'a erişim için client'ı kullan
-  return clients.matchAll().then(clients => {
-    if (clients.length > 0) {
-      // Client'a mesaj gönder
-      clients.forEach(client => {
-        client.postMessage({
-          type: 'CHECK_SCHEDULED_NOTIFICATIONS',
-          timestamp: Date.now()
-        });
-      });
-    }
-  });
-}
-
-// Her dakika zamanlanmış bildirimleri kontrol et
-setInterval(() => {
-  checkScheduledNotificationsInSW();
-}, 60000);
-
-// Background sync için
-self.addEventListener('sync', function(event) {
-  if (event.tag === 'background-sync') {
-    event.waitUntil(checkScheduledNotificationsInSW());
-  }
-});
-
-// Periodic background sync (PWA için)
-self.addEventListener('periodicsync', function(event) {
-  if (event.tag === 'notification-sync') {
-    event.waitUntil(checkScheduledNotificationsInSW());
-  }
-});
+// iOS Safari'de timer'lar ve background sync desteklenmiyor
+// Sadece push event'leri ile çalışıyoruz

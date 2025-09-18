@@ -1,20 +1,21 @@
 {
-  "name": "Bildirim Sistemi",
+  "name": "Bildirimler",
   "short_name": "Bildirimler",
   "description": "Kişisel bildirim sistemi",
   "start_url": "/FurkAI_Project/",
+  "scope": "/FurkAI_Project/",
   "display": "standalone",
-  "background_color": "#ffffff",
+  "background_color": "#000000",
   "theme_color": "#000000",
   "orientation": "portrait",
   "icons": [
     {
-      "src": "icon-192.png",
+      "src": "/FurkAI_Project/icon-192.png",
       "sizes": "192x192",
       "type": "image/png"
     },
     {
-      "src": "icon-512.png",
+      "src": "/FurkAI_Project/icon-512.png",
       "sizes": "512x512",
       "type": "image/png"
     }
