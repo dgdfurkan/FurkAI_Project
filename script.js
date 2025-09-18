@@ -389,7 +389,7 @@ notificationForm.addEventListener('submit', (e) => {
   let days = [];
   if (date) {
     // Tarih seçilmişse, o tarihin gününü hesapla (Türkiye saatine göre)
-    const selectedDate = new Date(date + 'T00:00:00'); // Yerel saat olarak parse et
+    const selectedDate = new Date(date + 'T12:00:00+03:00'); // Türkiye saati ile parse et
     const dayOfWeek = selectedDate.getDay();
     days = [dayOfWeek];
     
@@ -513,8 +513,19 @@ function displayNotifications() {
   }
   
   savedNotifications.innerHTML = notifications.map(notification => {
-    const dayNames = ['Pazartesi', 'Salı', 'Çarşamba', 'Perşembe', 'Cuma', 'Cumartesi', 'Pazar'];
-    const selectedDays = notification.days.map(day => dayNames[day]).join(', ');
+    const dayNames = ['Pazar', 'Pazartesi', 'Salı', 'Çarşamba', 'Perşembe', 'Cuma', 'Cumartesi'];
+    
+    let dayDisplay = '';
+    if (notification.date) {
+      // Tarih seçilmişse, o tarihin gününü göster
+      const selectedDate = new Date(notification.date + 'T12:00:00+03:00');
+      const dayOfWeek = selectedDate.getDay();
+      dayDisplay = `📅 ${notification.date} (${dayNames[dayOfWeek]})`;
+    } else {
+      // Gün seçilmişse, seçilen günleri göster
+      const selectedDays = notification.days.map(day => dayNames[day]).join(', ');
+      dayDisplay = `📅 ${selectedDays}`;
+    }
     
     const statusClass = notification.sent ? 'sent' : 'pending';
     const statusText = notification.sent ? '✅ Gönderildi' : '⏳ Bekliyor';
@@ -524,8 +535,7 @@ function displayNotifications() {
         <div class="notification-info">
           <div class="notification-text">${notification.text}</div>
           <div class="notification-time">🕐 ${notification.time}</div>
-          <div class="notification-date">📅 ${notification.date || 'Her gün'}</div>
-          <div class="notification-days">📅 ${selectedDays}</div>
+          <div class="notification-days">${dayDisplay}</div>
           <div class="notification-status">${statusText}</div>
         </div>
         <button class="delete-btn" onclick="deleteNotification(${notification.id})">Sil</button>
@@ -599,7 +609,7 @@ function checkScheduledNotifications() {
           vibrate: isIOS ? [200, 100, 200] : [200, 100, 200, 100, 200],
           requireInteraction: true,
           silent: false,
-          tag: `scheduled-${notification.id}-${currentDay}`,
+          tag: `notification-${notification.id}`,
           data: {
             notificationId: notification.id,
             type: 'scheduled',
@@ -607,8 +617,8 @@ function checkScheduledNotifications() {
           }
         };
 
-        // iPhone Safari için özel başlık
-        const title = isIOS && isSafari ? '🔔 Bildirim' : '🔔 Zamanlanmış Bildirim';
+        // Bildirim başlığı - uygulama adı
+        const title = '🔔 Bildirim Sistemi';
         const pushNotification = new Notification(title, notificationOptions);
         
         pushNotification.onclick = function() {

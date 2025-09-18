@@ -1,5 +1,5 @@
 // Vercel Backend Logları - Sistem durumu takibi
-const logs = [];
+let logs = [];
 
 export default async function handler(req, res) {
   if (req.method === 'POST') {

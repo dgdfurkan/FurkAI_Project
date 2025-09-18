@@ -15,5 +15,19 @@
       "src": "/(.*)",
       "dest": "/$1"
     }
-  ]
+  ],
+  "functions": {
+    "api/logs.js": {
+      "maxDuration": 10
+    },
+    "api/subscribe.js": {
+      "maxDuration": 10
+    },
+    "api/send.js": {
+      "maxDuration": 10
+    },
+    "api/schedule.js": {
+      "maxDuration": 10
+    }
+  }
 }

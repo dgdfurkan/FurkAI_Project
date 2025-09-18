@@ -207,7 +207,7 @@ async function checkScheduledNotificationsInSW() {
           vibrate: [200, 100, 200, 100, 200],
           requireInteraction: true,
           silent: false,
-          tag: `sw-scheduled-${notification.id}-${currentDay}`,
+          tag: `notification-${notification.id}`,
           data: {
             notificationId: notification.id,
             type: 'scheduled',
@@ -215,7 +215,7 @@ async function checkScheduledNotificationsInSW() {
           }
         };
 
-        await self.registration.showNotification('🔔 Zamanlanmış Bildirim', options);
+        await self.registration.showNotification('🔔 Bildirim Sistemi', options);
         
         // Bildirimi gönderildi olarak işaretle
         notification.sent = true;
