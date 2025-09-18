@@ -45,10 +45,14 @@ async function ensurePushSubscription(reg) {
   }
 }
 
-// Service Worker kaydı - iPhone Safari uyumlu
+// Service Worker kaydı - iPhone Safari uyumlu + Background Sync
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', async () => {
     try {
+      // IndexedDB'yi başlat
+      await initIndexedDB();
+      console.log('✅ IndexedDB başlatıldı');
+      
       // iPhone Safari için özel scope
       const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
       const scope = isIOS ? '/' : '/';
@@ -63,6 +67,21 @@ if ('serviceWorker' in navigator) {
       
       if (Notification.permission === 'granted') {
         await ensurePushSubscription(reg);
+        
+        // Background sync'i kaydet (Service Worker için)
+        if ('serviceWorker' in navigator && 'sync' in window.ServiceWorkerRegistration.prototype) {
+          try {
+            await reg.sync.register('notification-sync');
+            console.log('✅ Background sync kaydedildi');
+          } catch (syncError) {
+            console.log('Background sync kayıt hatası:', syncError);
+          }
+        }
+        
+        // Service Worker'a mesaj gönder
+        if (reg.active) {
+          reg.active.postMessage({ type: 'REGISTER_BACKGROUND_SYNC' });
+        }
       }
     } catch (error) {
       console.log('❌ Service Worker hatası:', error);
@@ -351,6 +370,56 @@ notificationForm.addEventListener('submit', (e) => {
   alert('✅ Bildirim başarıyla kaydedildi! Canlı alarm sistemi aktif.');
 });
 
+// IndexedDB desteği - Uygulama kapalıyken çalışması için
+let db;
+
+function initIndexedDB() {
+  return new Promise((resolve, reject) => {
+    const request = indexedDB.open('BildirimDB', 1);
+    
+    request.onerror = () => reject(request.error);
+    request.onsuccess = () => {
+      db = request.result;
+      resolve(db);
+    };
+    
+    request.onupgradeneeded = () => {
+      const db = request.result;
+      if (!db.objectStoreNames.contains('notifications')) {
+        db.createObjectStore('notifications', { keyPath: 'id' });
+      }
+    };
+  });
+}
+
+// IndexedDB'ye bildirim kaydet
+async function saveNotificationToIndexedDB(notification) {
+  if (!db) await initIndexedDB();
+  
+  return new Promise((resolve, reject) => {
+    const transaction = db.transaction(['notifications'], 'readwrite');
+    const store = transaction.objectStore('notifications');
+    const request = store.put(notification);
+    
+    request.onsuccess = () => resolve();
+    request.onerror = () => reject(request.error);
+  });
+}
+
+// IndexedDB'den bildirimleri al
+async function getNotificationsFromIndexedDB() {
+  if (!db) await initIndexedDB();
+  
+  return new Promise((resolve, reject) => {
+    const transaction = db.transaction(['notifications'], 'readonly');
+    const store = transaction.objectStore('notifications');
+    const request = store.getAll();
+    
+    request.onsuccess = () => resolve(request.result || []);
+    request.onerror = () => reject(request.error);
+  });
+}
+
 // Bildirimleri localStorage'a kaydetme - Güncelleme desteği ile
 function saveNotification(notification) {
   let notifications = JSON.parse(localStorage.getItem('notifications') || '[]');
@@ -366,6 +435,11 @@ function saveNotification(notification) {
   }
   
   localStorage.setItem('notifications', JSON.stringify(notifications));
+  
+  // IndexedDB'ye de kaydet (Service Worker için)
+  saveNotificationToIndexedDB(notification).catch(error => {
+    console.log('IndexedDB kayıt hatası:', error);
+  });
 }
 
 // Bildirimleri localStorage'dan yükleme
