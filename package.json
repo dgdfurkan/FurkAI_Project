@@ -1,8 +1,9 @@
 {
   "name": "bildirim-sistemi",
-  "version": "2.0.0",
+  "version": "2.0.2",
   "description": "Canlı Bildirim Sistemi - Tarih ve Saat Desteği",
   "main": "index.html",
+  "type": "module",
   "scripts": {
     "dev": "vercel dev",
     "build": "echo 'Build completed'",
@@ -10,9 +11,6 @@
   },
   "dependencies": {
     "web-push": "^3.6.6"
-  },
-  "engines": {
-    "node": ">=18.0.0"
   },
   "keywords": [
     "notifications",
